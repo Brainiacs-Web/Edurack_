@@ -6,8 +6,6 @@ const mongoose = require('mongoose');
 const cors     = require('cors');
 const path     = require('path');
 
-// Suppress the strictQuery deprecation warning:
-// (optional, but recommended)
 mongoose.set('strictQuery', false);
 
 const authRoutes     = require('./routes/auth');
@@ -43,8 +41,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/payment', paymentRoutes);
 
-// 6) Start server on port 5000 (if not overridden)
+// 6) Start server on 0.0.0.0 to allow external access
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running and accessible at http://192.168.1.205:${PORT}`);
 });
