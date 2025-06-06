@@ -16,8 +16,13 @@ const paymentRoutes  = require('./routes/paymentRoutes');
 
 const app = express();
 
-// 1) Middleware
-app.use(cors());
+// 1) Middleware: Enable CORS only for your frontend URL
+app.use(cors({
+  origin: 'https://edurack.onrender.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // 2) Serve static files from backend/public/
@@ -41,8 +46,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/payment', paymentRoutes);
 
-// 6) Start server on localhost and port from env or 5000
+// 6) Start server on all network interfaces (0.0.0.0) and port from env or 5000
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, 'localhost', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running and accessible at http://localhost:${PORT}`);
 });
