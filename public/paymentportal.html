@@ -975,287 +975,298 @@
     </div>
   </div>
 
-  <script>
-    console.log("🚀 Payment Portal Loaded");
+ <script>
+  console.log("🚀 Payment Portal Loaded");
 
-    // Progress tracking
-    let currentPhase = 1;
+  // Progress tracking
+  let currentPhase = 1;
 
-    // Update progress indicator
-    function updateProgress(phase) {
-      currentPhase = phase;
-      
-      // Reset all steps
-      document.querySelectorAll('.step').forEach(step => {
-        step.classList.remove('active', 'completed');
-      });
-      
-      // Update steps based on current phase
-      for (let i = 1; i <= 3; i++) {
-        const step = document.getElementById(`step${i}`);
-        if (i < phase) {
-          step.classList.add('completed');
-        } else if (i === phase) {
-          step.classList.add('active');
-        }
-      }
-      
-      // Update progress line
-      const progressFill = document.getElementById('progressFill');
-      const progressPercentage = ((phase - 1) / 2) * 100;
-      progressFill.style.width = `${progressPercentage}%`;
-    }
-
-    // 1) Read query params
-    const params = new URLSearchParams(window.location.search);
-    const plan   = params.get('plan');
-    const userId = params.get('userId');
-    const price  = params.get('price');
-
-    console.log("Query Params:", { plan, userId, price });
-
-    // Show plan details in Phase 1
-    document.getElementById('planDetails').innerHTML = `
-      <div class="plan-header">
-        <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text-primary); margin: 0;">Premium Plan</h3>
-        <div class="plan-badge">Selected</div>
-      </div>
-      <div class="plan-item">
-        <span class="plan-label">
-          <i class="fas fa-graduation-cap"></i>
-          Plan Name
-        </span>
-        <span class="plan-value">${plan}</span>
-      </div>
-      <div class="plan-item">
-        <span class="plan-label">
-          <i class="fas fa-tag"></i>
-          Total Amount
-        </span>
-        <span class="plan-value price-highlight">₹${price}</span>
-      </div>
-      <div class="plan-item">
-        <span class="plan-label">
-          <i class="fas fa-calendar-alt"></i>
-          Billing Type
-        </span>
-        <span class="plan-value">One-time Payment</span>
-      </div>
-      <div class="plan-item">
-        <span class="plan-label">
-          <i class="fas fa-infinity"></i>
-          Access Duration
-        </span>
-        <span class="plan-value">Lifetime Access</span>
-      </div>
-      <div class="plan-item">
-        <span class="plan-label">
-          <i class="fas fa-bolt"></i>
-          Activation
-        </span>
-        <span class="plan-value">Instant</span>
-      </div>
-    `;
-
-    // "Next" button moves to Phase 2
-    document.getElementById('nextBtn1').addEventListener('click', () => {
-      console.log("Next (Phase 1) clicked");
-      
-      // Add loading state
-      const btn = document.getElementById('nextBtn1');
-      btn.classList.add('loading');
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-      
-      setTimeout(() => {
-        document.getElementById('phase1').style.display  = 'none';
-        document.getElementById('phase2').style.display  = 'block';
-        updateProgress(2);
-        fetchUserDetails();
-        
-        // Reset button
-        btn.classList.remove('loading');
-        btn.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Information';
-        
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 1200);
+  // Update progress indicator
+  function updateProgress(phase) {
+    currentPhase = phase;
+    
+    // Reset all steps
+    document.querySelectorAll('.step').forEach(step => {
+      step.classList.remove('active', 'completed');
     });
-
-    // 2) Fetch user info from backend (/api/users/:id)
-    async function fetchUserDetails() {
-      try {
-        console.log("Fetching user details for:", userId);
-        const res = await fetch(`/api/users/${userId}`);
-        if (!res.ok) {
-          console.error("Error fetching user:", res.status, res.statusText);
-          return;
-        }
-        const user = await res.json();
-        console.log("User data:", user);
-        
-        // Get first letter of name for avatar
-        const firstLetter = user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U';
-        
-        document.getElementById('userDetails').innerHTML = `
-          <div class="user-header">
-            <div class="user-avatar">${firstLetter}</div>
-            <div>
-              <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text-primary); margin: 0;">${user.fullName}</h3>
-              <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Verified Account</p>
-            </div>
-          </div>
-          <div class="user-item">
-            <span class="user-label">
-              <i class="fas fa-user"></i>
-              Full Name
-            </span>
-            <span class="user-value">${user.fullName}</span>
-          </div>
-          <div class="user-item">
-            <span class="user-label">
-              <i class="fas fa-birthday-cake"></i>
-              Date of Birth
-            </span>
-            <span class="user-value">${user.dateOfBirth}</span>
-          </div>
-          <div class="user-item">
-            <span class="user-label">
-              <i class="fas fa-phone"></i>
-              Phone Number
-            </span>
-            <span class="user-value">${user.phone}</span>
-          </div>
-        `;
-      } catch (err) {
-        console.error("Network or JSON error fetching user:", err);
+    
+    // Update steps based on current phase
+    for (let i = 1; i <= 3; i++) {
+      const step = document.getElementById(`step${i}`);
+      if (i < phase) {
+        step.classList.add('completed');
+      } else if (i === phase) {
+        step.classList.add('active');
       }
     }
+    
+    // Update progress line
+    const progressFill = document.getElementById('progressFill');
+    const progressPercentage = ((phase - 1) / 2) * 100;
+    progressFill.style.width = `${progressPercentage}%`;
+  }
 
-    // 3) Razorpay integration on "Proceed to Pay"
-    document.getElementById('nextBtn2').addEventListener('click', async () => {
-      console.log("Proceed to Pay clicked");
+  // 1) Read query params
+  const params = new URLSearchParams(window.location.search);
+  const plan   = params.get('plan');
+  const userId = params.get('userId');
+  const price  = params.get('price');
 
-      // Add loading state
-      const btn = document.getElementById('nextBtn2');
-      btn.classList.add('loading');
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  console.log("Query Params:", { plan, userId, price });
 
-      // Gather Address
-      const address = {
-        line1: document.getElementById('line1').value,
-        city: document.getElementById('city').value,
-        state: document.getElementById('state').value,
-        postalCode: document.getElementById('postalCode').value,
-        country: document.getElementById('country').value
-      };
+  // decide access duration based on plan
+  let accessDuration;
+  if (plan === 'basic') {
+    accessDuration = '1 Month';
+  } else if (plan === 'advanced') {
+    accessDuration = 'Yearly';
+  }
 
-      // Validate address fields
-      if (!address.line1 || !address.city || !address.state || !address.postalCode || !address.country) {
-        alert('Please fill all address fields.');
+  // Show plan details in Phase 1
+  document.getElementById('planDetails').innerHTML = `
+    <div class="plan-header">
+      <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text-primary); margin: 0;">
+        ${plan} Plan
+      </h3>
+      <div class="plan-badge">Selected</div>
+    </div>
+    <div class="plan-item">
+      <span class="plan-label">
+        <i class="fas fa-graduation-cap"></i>
+        Plan Name
+      </span>
+      <span class="plan-value">${plan}</span>
+    </div>
+    <div class="plan-item">
+      <span class="plan-label">
+        <i class="fas fa-tag"></i>
+        Total Amount
+      </span>
+      <span class="plan-value price-highlight">₹${price}</span>
+    </div>
+    <div class="plan-item">
+      <span class="plan-label">
+        <i class="fas fa-calendar-alt"></i>
+        Billing Type
+      </span>
+      <span class="plan-value">One-time Payment</span>
+    </div>
+    <div class="plan-item">
+      <span class="plan-label">
+        <i class="fas fa-infinity"></i>
+        Access Duration
+      </span>
+      <span class="plan-value">${accessDuration}</span>
+    </div>
+    <div class="plan-item">
+      <span class="plan-label">
+        <i class="fas fa-bolt"></i>
+        Activation
+      </span>
+      <span class="plan-value">Instant</span>
+    </div>
+  `;
+
+  // "Next" button moves to Phase 2
+  document.getElementById('nextBtn1').addEventListener('click', () => {
+    console.log("Next (Phase 1) clicked");
+    
+    // Add loading state
+    const btn = document.getElementById('nextBtn1');
+    btn.classList.add('loading');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    
+    setTimeout(() => {
+      document.getElementById('phase1').style.display  = 'none';
+      document.getElementById('phase2').style.display  = 'block';
+      updateProgress(2);
+      fetchUserDetails();
+      
+      // Reset button
+      btn.classList.remove('loading');
+      btn.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Information';
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 1200);
+  });
+
+  // 2) Fetch user info from backend (/api/users/:id)
+  async function fetchUserDetails() {
+    try {
+      console.log("Fetching user details for:", userId);
+      const res = await fetch(`/api/users/${userId}`);
+      if (!res.ok) {
+        console.error("Error fetching user:", res.status, res.statusText);
+        return;
+      }
+      const user = await res.json();
+      console.log("User data:", user);
+      
+      // Get first letter of name for avatar
+      const firstLetter = user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U';
+      
+      document.getElementById('userDetails').innerHTML = `
+        <div class="user-header">
+          <div class="user-avatar">${firstLetter}</div>
+          <div>
+            <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text-primary); margin: 0;">${user.fullName}</h3>
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Verified Account</p>
+          </div>
+        </div>
+        <div class="user-item">
+          <span class="user-label">
+            <i class="fas fa-user"></i>
+            Full Name
+          </span>
+          <span class="user-value">${user.fullName}</span>
+        </div>
+        <div class="user-item">
+          <span class="user-label">
+            <i class="fas fa-birthday-cake"></i>
+            Date of Birth
+          </span>
+          <span class="user-value">${user.dateOfBirth}</span>
+        </div>
+        <div class="user-item">
+          <span class="user-label">
+            <i class="fas fa-phone"></i>
+            Phone Number
+          </span>
+          <span class="user-value">${user.phone}</span>
+        </div>
+      `;
+    } catch (err) {
+      console.error("Network or JSON error fetching user:", err);
+    }
+  }
+
+  // 3) Razorpay integration on "Proceed to Pay"
+  document.getElementById('nextBtn2').addEventListener('click', async () => {
+    console.log("Proceed to Pay clicked");
+
+    // Add loading state
+    const btn = document.getElementById('nextBtn2');
+    btn.classList.add('loading');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    // Gather Address
+    const address = {
+      line1: document.getElementById('line1').value,
+      city: document.getElementById('city').value,
+      state: document.getElementById('state').value,
+      postalCode: document.getElementById('postalCode').value,
+      country: document.getElementById('country').value
+    };
+
+    // Validate address fields
+    if (!address.line1 || !address.city || !address.state || !address.postalCode || !address.country) {
+      alert('Please fill all address fields.');
+      btn.classList.remove('loading');
+      btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
+      return;
+    }
+
+    // Update progress to payment phase
+    updateProgress(3);
+
+    // 3a) Create Razorpay order on server
+    try {
+      console.log("Creating Razorpay order for amount:", price);
+      const orderRes = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: price })
+      });
+
+      if (!orderRes.ok) {
+        const text = await orderRes.text();
+        console.error("Error from /api/payment/create-order:", orderRes.status, text);
+        alert('Failed to create order. Check server logs.');
         btn.classList.remove('loading');
         btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
         return;
       }
 
-      // Update progress to payment phase
-      updateProgress(3);
+      const order = await orderRes.json();
+      console.log("Order response:", order);
 
-      // 3a) Create Razorpay order on server
-      try {
-        console.log("Creating Razorpay order for amount:", price);
-        const orderRes = await fetch('/api/payment/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: price })
-        });
+      // Reset button before opening Razorpay
+      btn.classList.remove('loading');
+      btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
 
-        if (!orderRes.ok) {
-          const text = await orderRes.text();
-          console.error("Error from /api/payment/create-order:", orderRes.status, text);
-          alert('Failed to create order. Check server logs.');
-          btn.classList.remove('loading');
-          btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
-          return;
-        }
+      // 3b) Open Razorpay Checkout
+      const options = {
+        key: 'rzp_live_VOId3dd9G2uxM5', // ← Replace with your actual key
+        amount: order.amount,
+        currency: 'INR',
+        name: 'Eduracks',
+        description: `Payment for ${plan} plan`,
+        order_id: order.id,
+        handler: async function (response) {
+          console.log("Razorpay handler response:", response);
 
-        const order = await orderRes.json();
-        console.log("Order response:", order);
+          // 3c) Verify payment on server
+          try {
+            const verifyRes = await fetch('/api/payment/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id:    response.razorpay_order_id,
+                razorpay_payment_id:  response.razorpay_payment_id,
+                razorpay_signature:   response.razorpay_signature,
+                userId:               userId,
+                plan:                 plan,
+                amount:               price,
+                address:              address
+              })
+            });
 
-        // Reset button before opening Razorpay
-        btn.classList.remove('loading');
-        btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
-
-        // 3b) Open Razorpay Checkout
-        const options = {
-          key: 'rzp_live_VOId3dd9G2uxM5', // ← Replace with your actual key
-          amount: order.amount,
-          currency: 'INR',
-          name: 'Eduracks',
-          description: `Payment for ${plan} plan`,
-          order_id: order.id,
-          handler: async function (response) {
-            console.log("Razorpay handler response:", response);
-
-            // 3c) Verify payment on server
-            try {
-              const verifyRes = await fetch('/api/payment/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id:    response.razorpay_order_id,
-                  razorpay_payment_id:  response.razorpay_payment_id,
-                  razorpay_signature:   response.razorpay_signature,
-                  userId:               userId,
-                  plan:                 plan,
-                  amount:               price,
-                  address:              address
-                })
-              });
-
-              if (!verifyRes.ok) {
-                const text = await verifyRes.text();
-                console.error("Error from /api/payment/verify-payment:", verifyRes.status, text);
-                alert('Payment verification failed. Check server logs.');
-                return;
-              }
-
-              const data = await verifyRes.json();
-              console.log("Verify response:", data);
-
-              if (data.success) {
-                alert('Payment successful! Your plan is activated.');
-                window.location.href = 'premium.html';
-              } else {
-                alert('Payment failed: ' + data.message);
-              }
-            } catch (err) {
-              console.error("Network or JSON error verifying payment:", err);
-              alert('Error verifying payment. Check console.');
+            if (!verifyRes.ok) {
+              const text = await verifyRes.text();
+              console.error("Error from /api/payment/verify-payment:", verifyRes.status, text);
+              alert('Payment verification failed. Check server logs.');
+              return;
             }
-          },
-          prefill: {
-            name:  '', // optionally prefill name if you have it
-            email: '',
-            contact: ''
-          },
-          theme: {
-            color: '#6366f1'
+
+            const data = await verifyRes.json();
+            console.log("Verify response:", data);
+
+            if (data.success) {
+              alert('Payment successful! Your plan is activated.');
+              window.location.href = 'premium.html';
+            } else {
+              alert('Payment failed: ' + data.message);
+            }
+          } catch (err) {
+            console.error("Network or JSON error verifying payment:", err);
+            alert('Error verifying payment. Check console.');
           }
-        };
+        },
+        prefill: {
+          name:  '', // optionally prefill name if you have it
+          email: '',
+          contact: ''
+        },
+        theme: {
+          color: '#6366f1'
+        }
+      };
 
-        console.log("Opening Razorpay Checkout");
-        const rzp = new Razorpay(options);
-        rzp.open();
-      } catch (err) {
-        console.error("Network or JSON error creating order:", err);
-        alert('Error creating order. Check console.');
-        btn.classList.remove('loading');
-        btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
-      }
-    });
+      console.log("Opening Razorpay Checkout");
+      const rzp = new Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Network or JSON error creating order:", err);
+      alert('Error creating order. Check console.');
+      btn.classList.remove('loading');
+      btn.innerHTML = '<i class="fas fa-credit-card"></i> Proceed to Secure Payment';
+    }
+  });
 
-    // Initialize progress on page load
-    updateProgress(1);
-  </script>
+  // Initialize progress on page load
+  updateProgress(1);
+</script>
+
 </body>
 </html>
