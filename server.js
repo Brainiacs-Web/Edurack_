@@ -41,8 +41,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/payment', paymentRoutes);
 
-// 6) Start server on 0.0.0.0 to allow external access
+// 6) Start server on localhost and port from env or 5000
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running and accessible at http://192.168.1.205:${PORT}`);
+app.listen(PORT, 'localhost', () => {
+  console.log(`🚀 Server running and accessible at http://localhost:${PORT}`);
 });
