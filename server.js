@@ -16,12 +16,13 @@ const paymentRoutes  = require('./routes/paymentRoutes');
 
 const app = express();
 
-// 1) Middleware
+// 1) Middleware: Enable CORS only for your frontend URL
 app.use(cors({
-  origin: '*', // Allow all origins for testing; restrict to your frontend URL in production
+  origin: 'https://edurack.onrender.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // 2) Serve static files from backend/public/
