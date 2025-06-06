@@ -77,29 +77,7 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  },
-
-  // ─────────────────────────────────────────────────────
-  // Premium subscription fields:
-  premiumStatus: {
-    type: String,
-    enum: ['inactive', 'active'],
-    default: 'inactive'
-  },
-  premiumPlan: {
-    type: String,
-    enum: ['basic', 'advanced'],
-    default: null
-  },
-  planStart: {
-    type: Date,
-    default: null
-  },
-  planEnd: {
-    type: Date,
-    default: null
   }
-});
+}, { collection: 'User Data' });
 
-// Use explicit collection name "User Data"
-module.exports = mongoose.model('User', userSchema, 'User Data');
+module.exports = mongoose.model('User', userSchema);
