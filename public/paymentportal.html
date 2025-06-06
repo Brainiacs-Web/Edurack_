@@ -1016,13 +1016,11 @@
 
   // decide access duration based on plan
   let accessDuration;
-  if (plan === 'Basic') {
+  if (plan === 'basic') {
     accessDuration = '1 Month';
-  } else if (plan === 'Premium') {
+  } else if (plan === 'advanced') {
     accessDuration = 'Yearly';
-  } else {
-    accessDuration = 'Lifetime Access';
-  }
+
 
   // Show plan details in Phase 1
   document.getElementById('planDetails').innerHTML = `
