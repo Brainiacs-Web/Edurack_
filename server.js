@@ -16,38 +16,34 @@ const paymentRoutes  = require('./routes/paymentRoutes');
 
 const app = express();
 
-// 1) Middleware: Enable CORS only for your frontend URL
-app.use(cors({
-  origin: 'https://edurack.onrender.com',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// ✅ Enable CORS for all origins (dev + prod)
+app.use(cors()); // 🔥 ALLOWS ALL ORIGINS
 
 app.use(express.json());
 
-// 2) Serve static files from backend/public/
+// ✅ Serve static frontend files from /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 3) Root route serves index.html
+// ✅ Default route to serve index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 4) Connect to MongoDB
+// ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// 5) API routes
+// ✅ API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/payment', paymentRoutes);
 
-// 6) Start server on all network interfaces (0.0.0.0) and port from env or 5000
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running and accessible at http://localhost:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
