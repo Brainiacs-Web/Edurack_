@@ -77,10 +77,7 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  },
+  }
+}, { collection: 'User Data' });
 
-  // ─────────────────────────────────────────────────────
-});
-
-// Use explicit collection name "User Data"
-module.exports = mongoose.model('User', userSchema, 'User Data');
+module.exports = mongoose.model('User', userSchema);
