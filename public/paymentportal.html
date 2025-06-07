@@ -879,6 +879,25 @@
         <!-- Plan details will be populated by JavaScript -->
       </div>
 
+      <!-- Coupon Code Section -->
+      <div class="form-group" style="margin-top: 1.5rem;">
+        <label class="form-label" for="couponCode">
+          <i class="fas fa-ticket-alt"></i>
+          Coupon Code (if any)
+        </label>
+        <input
+          type="text"
+          id="couponCode"
+          class="form-input"
+          placeholder="Enter coupon code"
+          style="max-width: 300px; display: inline-block;"
+        />
+        <button id="applyCouponBtn" class="btn btn-primary" style="margin-left: 0.5rem; padding: 0.5rem 1rem; font-size: 0.9rem;">
+          Apply
+        </button>
+        <p id="couponMessage" style="margin-top: 0.5rem; color: var(--error); font-size: 0.9rem; display: none;"></p>
+      </div>
+
       <div class="security-features">
         <div class="security-item">
           <div class="security-icon">
@@ -974,12 +993,19 @@
       </div>
     </div>
   </div>
+</body>
 
  <script>
   console.log("🚀 Payment Portal Loaded");
 
   // Progress tracking
   let currentPhase = 1;
+
+  // Coupon state
+  let couponApplied = false;
+  let discountAmount = 0;
+  let discountedPrice = null;
+  let appliedCouponCode = '';
 
   // Update progress indicator
   function updateProgress(phase) {
@@ -1010,7 +1036,7 @@
   const params = new URLSearchParams(window.location.search);
   const plan   = params.get('plan');
   const userId = params.get('userId');
-  const price  = params.get('price');
+  const price  = params.get('price'); // e.g. "1000" meaning ₹1,000
 
   console.log("Query Params:", { plan, userId, price });
 
@@ -1022,7 +1048,79 @@
     accessDuration = 'Yearly';
   }
 
-  // Show plan details in Phase 1
+  // 2) Cache references for coupon elements (already present in HTML)
+  const couponInput     = document.getElementById('couponCode');
+  const applyCouponBtn  = document.getElementById('applyCouponBtn');
+  const couponMessageP  = document.getElementById('couponMessage');
+
+  // 3) Handle "Apply Coupon" click
+  applyCouponBtn.addEventListener('click', async () => {
+    const code = couponInput.value.trim().toUpperCase();
+    if (!code) {
+      couponMessageP.style.display = 'block';
+      couponMessageP.style.color = 'var(--error)';
+      couponMessageP.textContent = 'Please enter a coupon code.';
+      return;
+    }
+
+    applyCouponBtn.disabled = true;
+    applyCouponBtn.textContent = 'Validating…';
+    couponMessageP.style.display = 'none';
+
+    try {
+      const payload = {
+        couponCode: code,
+        plan: plan,
+        amount: Number(price) // back-end expects original amount (in rupees or paise as configured)
+      };
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!data.valid) {
+        couponMessageP.style.display = 'block';
+        couponMessageP.style.color = 'var(--error)';
+        couponMessageP.textContent = data.message || 'Invalid coupon.';
+        couponApplied = false;
+        discountedPrice = null;
+      } else {
+        // Coupon is valid
+        couponApplied      = true;
+        discountAmount     = data.discount;
+        discountedPrice    = data.discountedAmount;
+        appliedCouponCode  = code;
+
+        // Disable further changes
+        couponInput.disabled = true;
+        applyCouponBtn.disabled = true;
+
+        couponMessageP.style.display = 'block';
+        couponMessageP.style.color = 'var(--success)';
+        couponMessageP.textContent = `Coupon applied! You saved ₹${discountAmount}. New price: ₹${discountedPrice}.`;
+
+        // Update the displayed “Total Amount” in the plan summary
+        const priceElem = document.querySelector('.plan-item .price-highlight');
+        if (priceElem) {
+          priceElem.textContent = `₹${discountedPrice}`;
+        }
+      }
+    } catch (err) {
+      console.error('Error validating coupon:', err);
+      couponMessageP.style.display = 'block';
+      couponMessageP.style.color = 'var(--error)';
+      couponMessageP.textContent = 'Server error validating coupon.';
+      couponApplied = false;
+      discountedPrice = null;
+    } finally {
+      applyCouponBtn.disabled = couponApplied; // keep disabled if applied
+      applyCouponBtn.textContent = 'Apply';
+    }
+  });
+
+  // 4) Show plan details in Phase 1 (including original price)
   document.getElementById('planDetails').innerHTML = `
     <div class="plan-header">
       <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text-primary); margin: 0;">
@@ -1067,7 +1165,7 @@
     </div>
   `;
 
-  // "Next" button moves to Phase 2
+  // 5) "Next" button moves to Phase 2
   document.getElementById('nextBtn1').addEventListener('click', () => {
     console.log("Next (Phase 1) clicked");
     
@@ -1091,7 +1189,7 @@
     }, 1200);
   });
 
-  // 2) Fetch user info from backend (/api/users/:id)
+  // 6) Fetch user info from backend (/api/users/:id)
   async function fetchUserDetails() {
     try {
       console.log("Fetching user details for:", userId);
@@ -1141,7 +1239,7 @@
     }
   }
 
-  // 3) Razorpay integration on "Proceed to Pay"
+  // 7) Razorpay integration on "Proceed to Pay"
   document.getElementById('nextBtn2').addEventListener('click', async () => {
     console.log("Proceed to Pay clicked");
 
@@ -1170,13 +1268,20 @@
     // Update progress to payment phase
     updateProgress(3);
 
+    // Determine final amount (rupees) based on coupon
+    let finalAmount = couponApplied && discountedPrice !== null
+      ? discountedPrice
+      : Number(price);
+    // If your /create-order endpoint expects paise, multiply by 100 here:
+    // finalAmount = finalAmount * 100;
+
     // 3a) Create Razorpay order on server
     try {
-      console.log("Creating Razorpay order for amount:", price);
+      console.log("Creating Razorpay order for amount:", finalAmount);
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: price })
+        body: JSON.stringify({ amount: finalAmount })
       });
 
       if (!orderRes.ok) {
@@ -1208,18 +1313,23 @@
 
           // 3c) Verify payment on server
           try {
+            const verifyPayload = {
+              razorpay_order_id:    response.razorpay_order_id,
+              razorpay_payment_id:  response.razorpay_payment_id,
+              razorpay_signature:   response.razorpay_signature,
+              userId:               userId,
+              plan:                 plan,
+              amount:               finalAmount,
+              originalAmount:       Number(price),
+              couponCode:           appliedCouponCode,
+              discountApplied:      discountAmount,
+              address:              address
+            };
+
             const verifyRes = await fetch('/api/payment/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id:    response.razorpay_order_id,
-                razorpay_payment_id:  response.razorpay_payment_id,
-                razorpay_signature:   response.razorpay_signature,
-                userId:               userId,
-                plan:                 plan,
-                amount:               price,
-                address:              address
-              })
+              body: JSON.stringify(verifyPayload)
             });
 
             if (!verifyRes.ok) {
@@ -1264,9 +1374,10 @@
     }
   });
 
-  // Initialize progress on page load
+  // 8) Initialize progress on page load
   updateProgress(1);
 </script>
+
 
 </body>
 </html>

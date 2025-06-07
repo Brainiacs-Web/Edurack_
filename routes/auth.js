@@ -109,6 +109,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error:', err);
+
     // Handle duplicate-key error 11000 for unique fields
     if (err.code === 11000) {
       if (err.keyValue?.email) {
@@ -118,7 +119,9 @@ router.post('/register', async (req, res) => {
         return res.status(500).json({ message: 'Could not generate a unique userID; please try again.' });
       }
     }
-    res.status(500).json({ message: 'Server error' });
+
+    // TEMPORARY: return the real error message for debugging
+    return res.status(500).json({ message: err.message || 'Unknown server error' });
   }
 });
 
@@ -158,7 +161,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -167,9 +170,8 @@ const authenticateToken = require('../middleware/auth');
 // GET /api/auth/user
 router.get('/user', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password'); // exclude password
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
-
     res.json({ user });
   } catch (err) {
     console.error('Fetch user error:', err);
@@ -177,6 +179,7 @@ router.get('/user', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password
 router.post('/change-password', authenticateToken, async (req, res) => {
   const { userId, currentPassword, newPassword } = req.body;
   if (req.user.id !== userId) {
@@ -207,7 +210,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 
     res.json({ message: 'Password changed successfully' });
   } catch (err) {
-    console.error(err);
+    console.error('Change-password error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
