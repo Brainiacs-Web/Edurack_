@@ -80,25 +80,6 @@ const userSchema = new mongoose.Schema({
   },
 
   // ─────────────────────────────────────────────────────
-  // Premium subscription fields:
-  premiumStatus: {
-    type: String,
-    enum: ['inactive', 'active'],
-    default: 'inactive'
-  },
-  premiumPlan: {
-    type: String,
-    enum: ['basic', 'advanced'],
-    default: null
-  },
-  planStart: {
-    type: Date,
-    default: null
-  },
-  planEnd: {
-    type: Date,
-    default: null
-  }
 });
 
 // Use explicit collection name "User Data"
