@@ -5,6 +5,21 @@ const router = express.Router();
 const Coupon = require('../models/Coupon');
 
 /**
+ * @route   GET /api/coupons
+ * @desc    Retrieve a list of all coupons
+ * @return  [ { code, type, amount, applicablePlans, expiresAt, createdAt, updatedAt, ... } ]
+ */
+router.get('/', async (req, res) => {
+  try {
+    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    return res.json(coupons);
+  } catch (err) {
+    console.error('Error fetching all coupons:', err);
+    return res.status(500).json({ message: 'Server error retrieving coupons.' });
+  }
+});
+
+/**
  * @route   POST /api/coupons/create
  * @desc    Create a new coupon with configurable fields
  * @body    { code: String, type: 'percentage'|'fixed', amount: Number, applicablePlans: [String], expiresAt: Date|null }

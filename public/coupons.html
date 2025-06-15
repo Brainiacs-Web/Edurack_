@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Coupon – Eduracks</title>
+  <title>Create & List Coupons – Eduracks</title>
 
   <style>
     :root {
@@ -43,9 +43,10 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      max-width: 500px;
+      max-width: 600px;
       width: 100%;
       padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
     }
 
     .card h1 {
@@ -141,10 +142,59 @@
     .message.error {
       color: var(--error);
     }
+
+    /* Coupon List */
+    .list-card {
+      background: var(--bg-field);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      max-width: 600px;
+      width: 100%;
+      padding: var(--spacing-lg);
+    }
+
+    .list-card h2 {
+      font-size: 1.25rem;
+      margin-bottom: var(--spacing-md);
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--spacing-md);
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--bg-light);
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    td {
+      background: var(--bg-field);
+      color: var(--text-primary);
+    }
+
+    .refresh-btn {
+      margin-top: var(--spacing-md);
+      width: auto;
+      padding: 0.5rem 1.5rem;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Create Coupon Card -->
   <div class="card">
     <h1>Create New Coupon</h1>
     <form id="createCouponForm">
@@ -191,31 +241,49 @@
       </div>
 
       <button type="submit" class="btn">Create Coupon</button>
-      <p id="message" class="message"></p>
+      <p id="createMessage" class="message"></p>
     </form>
+  </div>
+
+  <!-- List All Coupons Card -->
+  <div class="list-card">
+    <h2>All Coupons</h2>
+    <button id="refreshListBtn" class="btn refresh-btn">Refresh List</button>
+    <table id="couponsTable">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Plans</th>
+          <th>Expires At</th>
+          <th>Usage Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Populated via JavaScript -->
+      </tbody>
+    </table>
+    <p id="listMessage" class="message"></p>
   </div>
 
   <script>
     (function() {
+      // Create Coupon Logic
       const form = document.getElementById('createCouponForm');
-      const messageEl = document.getElementById('message');
+      const createMsg = document.getElementById('createMessage');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        messageEl.style.display = 'none';
+        createMsg.style.display = 'none';
 
-        // Gather form values
         const codeInput = document.getElementById('code').value.trim().toUpperCase();
         const typeInput = document.getElementById('type').value;
         const amountInput = Number(document.getElementById('amount').value);
         const dateInput = document.getElementById('expiresAt').value;
-        
-        // Collect applicable plans from checkboxes
         const checkedBoxes = Array.from(document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked'));
         const applicablePlans = checkedBoxes.map(cb => cb.value);
-        // If none checked, leave array empty = applies to all plans
 
-        // Build payload
         const payload = {
           code: codeInput,
           type: typeInput,
@@ -224,7 +292,6 @@
           expiresAt: dateInput ? new Date(dateInput).toISOString() : null
         };
 
-        // Disable button while processing
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Creating…';
@@ -236,29 +303,89 @@
             body: JSON.stringify(payload)
           });
 
-          if (res.ok) {
-            const data = await res.json();
-            // Expecting something like { success: true, coupon: { … } }
-            messageEl.className = 'message success';
-            messageEl.textContent = `Coupon "${data.coupon.code}" created successfully.`;
-            messageEl.style.display = 'block';
+          const data = await res.json();
+          if (res.ok && data.success) {
+            createMsg.className = 'message success';
+            createMsg.textContent = `Coupon "${data.coupon.code}" created successfully.`;
             form.reset();
+            fetchCouponsList(); // refresh list automatically after creation
           } else {
-            const errorData = await res.json();
-            messageEl.className = 'message error';
-            messageEl.textContent = errorData.message || 'Failed to create coupon.';
-            messageEl.style.display = 'block';
+            createMsg.className = 'message error';
+            createMsg.textContent = data.message || 'Failed to create coupon.';
           }
         } catch (err) {
           console.error('Network error:', err);
-          messageEl.className = 'message error';
-          messageEl.textContent = 'Server error. Please try again later.';
-          messageEl.style.display = 'block';
+          createMsg.className = 'message error';
+          createMsg.textContent = 'Server error. Please try again later.';
         } finally {
+          createMsg.style.display = 'block';
           submitBtn.disabled = false;
           submitBtn.textContent = 'Create Coupon';
         }
       });
+
+      // Fetch & Display Coupons List
+      const refreshBtn = document.getElementById('refreshListBtn');
+      const tableBody = document.querySelector('#couponsTable tbody');
+      const listMsg = document.getElementById('listMessage');
+
+      async function fetchCouponsList() {
+        listMsg.style.display = 'none';
+        tableBody.innerHTML = '';
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = 'Loading…';
+
+        try {
+          const res = await fetch('/api/coupons');
+          const data = await res.json();
+
+          if (!res.ok) {
+            listMsg.className = 'message error';
+            listMsg.textContent = data.message || 'Failed to fetch coupons.';
+            listMsg.style.display = 'block';
+            return;
+          }
+
+          if (!Array.isArray(data) || data.length === 0) {
+            listMsg.className = 'message';
+            listMsg.textContent = 'No coupons found.';
+            listMsg.style.display = 'block';
+            return;
+          }
+
+          // Build table rows
+          data.forEach(coupon => {
+            const tr = document.createElement('tr');
+
+            const plans = Array.isArray(coupon.applicablePlans) && coupon.applicablePlans.length
+              ? coupon.applicablePlans.join(', ')
+              : 'All';
+
+            tr.innerHTML = `
+              <td>${coupon.code}</td>
+              <td>${coupon.type}</td>
+              <td>${coupon.type === 'percentage' ? coupon.amount + '%' : '₹' + coupon.amount}</td>
+              <td>${plans}</td>
+              <td>${coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'Never'}</td>
+              <td>${coupon.usageCount || 0}</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        } catch (err) {
+          console.error('Error fetching coupons:', err);
+          listMsg.className = 'message error';
+          listMsg.textContent = 'Server error retrieving coupons.';
+          listMsg.style.display = 'block';
+        } finally {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = 'Refresh List';
+        }
+      }
+
+      refreshBtn.addEventListener('click', fetchCouponsList);
+
+      // Initial load of the list when page opens
+      fetchCouponsList();
     })();
   </script>
 

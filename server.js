@@ -43,22 +43,31 @@ mongoose.connect(process.env.MONGO_URI, {
 // -------------------------
 // 5. Routes
 // -------------------------
-const authRoutes     = require('./routes/auth');
-const contactRoutes  = require('./routes/contacts');
-const userRoutes     = require('./routes/users');
-const questionRoutes = require('./routes/questions');
-const paymentRoutes  = require('./routes/payment'); // ✅ renamed to match model
-const couponRoutes   = require('./routes/coupons');
+const authRoutes      = require('./routes/auth');
+const contactRoutes   = require('./routes/contacts');
+const userRoutes      = require('./routes/users');
+const questionRoutes  = require('./routes/questions');
+const paymentRoutes   = require('./routes/payment');
+const couponRoutes    = require('./routes/coupons');
+const ticketsRoutes   = require('./routes/tickets'); // <-- new
 
 app.use('/api/auth', authRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/questions', questionRoutes);
-app.use('/api/payment', paymentRoutes); // this route contains /status/:userId
+app.use('/api/payment', paymentRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/tickets', ticketsRoutes); // <-- mount tickets router
 
 // -------------------------
-// 6. Server Listener
+// 6. Handle 404 for unknown routes
+// -------------------------
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// -------------------------
+// 7. Server Listener
 // -------------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

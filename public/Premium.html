@@ -1412,63 +1412,69 @@
   const userAvatar = document.getElementById('userAvatar');
   const userDropdown = document.getElementById('userDropdown');
   const logoutBtn = document.getElementById('logoutBtn');
+  const premiumSection = document.getElementById('premium-section');
 
   let currentUserData = {};
 
   document.addEventListener('DOMContentLoaded', async () => {
-    initializeTheme();
-    setupEventListeners();
-    await fetchUserData();
-    await checkAndDisplayPremiumStatus();
+    try {
+      initializeTheme();
+      setupEventListeners();
+      await fetchUserData();
+      await checkAndDisplayPremiumStatus();
+    } catch (err) {
+      console.error("Initialization failed:", err);
+    }
   });
 
   function initializeTheme() {
     const savedTheme = localStorage.getItem('theme');
+    const icon = themeToggle?.querySelector('i');
     if (savedTheme === 'dark') {
       document.body.classList.add('dark-mode');
-      themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+      icon?.classList.replace('fa-moon', 'fa-sun');
     }
   }
 
   function setupEventListeners() {
-    sidebarToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      sidebarOverlay.classList.toggle('active');
+    sidebarToggle?.addEventListener('click', () => {
+      sidebar?.classList.toggle('active');
+      sidebarOverlay?.classList.toggle('active');
     });
 
-    sidebarOverlay.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      sidebarOverlay.classList.remove('active');
+    sidebarOverlay?.addEventListener('click', () => {
+      sidebar?.classList.remove('active');
+      sidebarOverlay?.classList.remove('active');
     });
 
-    userAvatar.addEventListener('click', (e) => {
+    userAvatar?.addEventListener('click', (e) => {
       e.stopPropagation();
-      userDropdown.classList.toggle('active');
+      userDropdown?.classList.toggle('active');
     });
 
     document.addEventListener('click', (e) => {
-      if (!userAvatar.contains(e.target) && !userDropdown.contains(e.target)) {
-        userDropdown.classList.remove('active');
+      if (!userAvatar?.contains(e.target) && !userDropdown?.contains(e.target)) {
+        userDropdown?.classList.remove('active');
       }
     });
 
-    themeToggle.addEventListener('click', () => {
+    themeToggle?.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
-      const icon = themeToggle.querySelector('i');
+      const icon = themeToggle?.querySelector('i');
       const isDark = document.body.classList.contains('dark-mode');
-      icon.classList.toggle('fa-sun', isDark);
-      icon.classList.toggle('fa-moon', !isDark);
+      icon?.classList.toggle('fa-sun', isDark);
+      icon?.classList.toggle('fa-moon', !isDark);
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
     });
 
-    logoutBtn.addEventListener('click', handleLogout);
+    logoutBtn?.addEventListener('click', handleLogout);
   }
 
   async function fetchUserData() {
     const token = localStorage.getItem('token');
     if (!token) {
-      window.location.href = '/index.html';
-      return;
+      console.warn("Token missing. Redirecting to login.");
+      return (window.location.href = '/index.html');
     }
 
     try {
@@ -1477,13 +1483,13 @@
       });
 
       if (!res.ok) {
+        console.error("Invalid token or user fetch failed.");
         localStorage.removeItem('token');
-        window.location.href = '/index.html';
-        return;
+        return (window.location.href = '/index.html');
       }
 
       const data = await res.json();
-      currentUserData = data.user;
+      currentUserData = data.user || {};
 
       const initials = (currentUserData.fullName || 'U')
         .split(' ')
@@ -1493,8 +1499,9 @@
         .substring(0, 2);
 
       document.getElementById('userInitials').textContent = initials;
+
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching user:', err);
       localStorage.removeItem('token');
       window.location.href = '/index.html';
     }
@@ -1502,51 +1509,66 @@
 
   async function checkAndDisplayPremiumStatus() {
     const userId = currentUserData._id || currentUserData.id;
-    if (!userId) return;
+    if (!userId || !premiumSection) {
+      console.warn("User ID or premium section not found.");
+      return;
+    }
 
     try {
       const res = await fetch(`/api/payment/status/${userId}`);
       const data = await res.json();
-      const section = document.getElementById("premium-section");
 
       if (data.active) {
-        section.classList.add('active');
-        section.innerHTML = `
+        premiumSection.classList.add('active');
+        premiumSection.innerHTML = `
           <h2><i class="fas fa-crown"></i> Your Plan is Active!</h2>
-          <p><strong>Plan:</strong> ${data.plan.toUpperCase()}</p>
-          <p><strong>Days Left:</strong> ${data.daysLeft} day(s)</p>
+          <p><strong>Plan:</strong> ${data.plan?.toUpperCase() || 'N/A'}</p>
+          <p><strong>Days Left:</strong> ${data.daysLeft || 0} day(s)</p>
           <h3>✨ Features:</h3>
-          <ul>${data.features.map(f => `<li>${f}</li>`).join('')}</ul>
+          <ul>${(data.features || []).map(f => `<li>${f}</li>`).join('')}</ul>
         `;
       } else {
-        section.innerHTML = `
+        premiumSection.innerHTML = `
           <h2><i class="fas fa-info-circle"></i> No Active Plan</h2>
           <p>Choose a plan below to continue learning:</p>
           <button onclick="redirectToPayment('basic', event)">Buy Basic - ₹99/month</button>
           <button onclick="redirectToPayment('advanced', event)">Buy Advanced - ₹999/year</button>
         `;
       }
+
     } catch (err) {
-      console.error("Error fetching plan status:", err);
-      document.getElementById("premium-section").innerHTML = "<p>❌ Failed to load plan details.</p>";
+      console.error("Failed to fetch plan status:", err);
+      premiumSection.innerHTML = "<p>❌ Failed to load plan details.</p>";
     }
   }
 
   function redirectToPayment(planType, e) {
     e.preventDefault();
+
     const userId = currentUserData._id || currentUserData.id;
-    if (!userId) return;
+    if (!userId) {
+      console.error("User ID missing. Cannot redirect.");
+      return;
+    }
 
     const price = planType === 'basic' ? 99 : 999;
     const button = e.currentTarget;
+
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting...';
     button.disabled = true;
 
     const params = new URLSearchParams({ plan: planType, userId, price }).toString();
+    const redirectUrl = `paymentportal.html?${params}`;
+
+    console.log("Redirecting to:", redirectUrl);
+
     setTimeout(() => {
-      window.location.href = `paymentportal.html?${params}`;
+      window.location.href = redirectUrl;
     }, 700);
   }
+
+  // Ensure global scope so inline onclick handlers can access it
+  window.redirectToPayment = redirectToPayment;
 
   function handleLogout(e) {
     e.preventDefault();
@@ -1569,11 +1591,12 @@
 
   window.addEventListener('resize', () => {
     if (window.innerWidth > 1024) {
-      sidebar.classList.remove('active');
-      sidebarOverlay.classList.remove('active');
+      sidebar?.classList.remove('active');
+      sidebarOverlay?.classList.remove('active');
     }
   });
 </script>
+
 </body>
 
 </html>
